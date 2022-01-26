@@ -19,10 +19,16 @@ const UserSchema = new mongoose.Schema({
      password: {
           type: String,
           required: [true, 'Please password required'],
-     }
+     },
+     // order:[ {
+     //      type: Schema.Types.ObjectId,
+     //      ref: 'Order',
+     //      required: true
+     //   }],
 },
 {
      timestamps: true
 });
 
 module.exports = mongoose.model('User', UserSchema);
+('a user can av many orders but an order can only belong to a user') 

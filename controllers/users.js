@@ -1,40 +1,37 @@
+const ErrorResponse = require('../utils/errorResponse');
+const asyncHandler = require('../middleware/async')
 const User = require("../model/Users");
+const Order = require("../model/Orders");
 const { validateUser } = require("../validation/user");
 
 /**
  * GET all users
  */
-exports.getUsers = async (req, res, next) => {
-  try {
-    const users = await User.find();
+exports.getUsers = asyncHandler(async (req, res, next) => {
+  const users = await User.find();
 
     return res.status(200).json({ success: true, data: users });
-  } catch (err) {
-    return res.status(400).json({ success: false });
-  }
-};
+});
 
 /**
  * GET a single user
  */
-exports.getUser = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.params.id);
+exports.getUser = asyncHandler(async (req, res, next) => {
+  
+    const user = await User.findById(req.params.id).populate('users');
     if (!user) {
-      return res.status(400).json({ success: false });
+      return  next(new ErrorResponse(`User not found with id of ${req.params.id}`, 404));
     }
+
     return res.status(200).json({ success: true, data: user });
-  } catch (err) {
-    return res.status(400).json({ success: false });
-  }
-};
+});
 
 /**
  * Post a user
  */
-exports.createUser = async (req, res, next) => {
-  try {
+exports.createUser = asyncHandler(async (req, res, next) => {
     //validate input
+   
     const { error } = validateUser(req.body);
   
     if (error)
@@ -42,7 +39,7 @@ exports.createUser = async (req, res, next) => {
         .status(400)
         .send({ success: false, message: error.details[0].message });
      
-
+    
     const { first_name, last_name, email, password } = req.body;
 
     const user = await User.create({
@@ -51,45 +48,47 @@ exports.createUser = async (req, res, next) => {
       email,
       password
     });
-  console.log(user);
+  
     return res.status(201).json({ success: true, data: user });
 
-
-  } catch (err) {
-    return res.status(400).json({ success: false, message: "" });
-  }
-};
+});
 
 /**
  *PUT users
  */
-exports.updateUser = async (req, res, next) => {
-  try {
+exports.updateUser = asyncHandler(async (req, res, next) => {
+  
     const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
     if (!user) {
-      return res.status(400).json({ success: false });
+      return  next(new ErrorResponse(`User not found with id of ${req.params.id}`, 404));
     }
     return res.status(200).json({ success: true, data: user });
-  } catch (err) {
-    return res.status(400).json({ success: false });
-  }
-};
+});
 
 /**
  *Delete users
  */
 
-exports.deleteUser = async (req, res, next) => {
-  try {
+exports.deleteUser = asyncHandler(async (req, res, next) => {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
-      return res.status(400).json({ success: false });
+      return  next(new ErrorResponse(`User not found with is of ${req.params.id}`, 404));
     }
     return res.status(200).json({ success: true, data: {} });
-  } catch (err) {
-    return res.status(400).json({ success: false });
-  }
-};
+});
+
+/**
+* Get orders by user's Id
+ */
+exports.getOrders = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    return  next(new ErrorResponse(`User not found with is of ${req.params.id}`, 404));
+  } 
+  // Find all orders of a particular user by its ID
+  const orders = await Order.find({ userId: user._id });
+  return res.status(200).json({ success: true, data: orders });
+});
